@@ -1,0 +1,10 @@
+{
+  "id": "core:isolated-cleanup-v1",
+  "name": "Conservative isolated pixel cleanup",
+  "category": "cluster-cleanup",
+  "version": 1,
+  "rule": {
+    "replace_only_if": "at least 3 orthogonal neighbors agree",
+    "goal": "remove accidental one-pixel noise without destroying intentional highlights"
+  }
+}
