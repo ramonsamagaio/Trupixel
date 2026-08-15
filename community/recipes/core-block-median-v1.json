@@ -1,0 +1,11 @@
+{
+  "id": "core:block-median-v1",
+  "name": "Robust block median reconstruction",
+  "category": "reconstruction",
+  "version": 1,
+  "rule": {
+    "sampling": "median visible RGBA in logical cell",
+    "transparent_majority_cutoff": 0.35,
+    "goal": "resist antialiasing and color-fringe noise"
+  }
+}
