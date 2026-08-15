@@ -1,0 +1,10 @@
+services:
+  trupixel:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - trupixel-data:/app/pixelforge-data
+
+volumes:
+  trupixel-data:
