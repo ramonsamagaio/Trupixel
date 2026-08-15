@@ -56,14 +56,46 @@ DATABASE_ENV_KEYS = (
     "POSTGRES_URL",
     "POSTGRES_PRISMA_URL",
     "NEON_DATABASE_URL",
+    "DATABASE_URL_UNPOOLED",
 )
 
 
+def _looks_like_postgres(value: str) -> bool:
+    return value.startswith("postgres://") or value.startswith("postgresql://")
+
+
 def _database_url() -> str | None:
+    # Standard names first.
     for key in DATABASE_ENV_KEYS:
         value = os.getenv(key)
-        if value:
+        if value and _looks_like_postgres(value):
             return value
+
+    # Vercel Marketplace resources may be connected with an environment-variable
+    # prefix (for example TRUPIXEL_DATABASE_URL). Detect those without requiring
+    # the app to know the prefix chosen in the dashboard.
+    for key, value in os.environ.items():
+        if not value or not _looks_like_postgres(value):
+            continue
+        if key.endswith("DATABASE_URL") or key.endswith("POSTGRES_URL"):
+            return value
+
+    # Final fallback for integrations configured as granular PG* variables.
+    suffixes = ("PGHOST", "PGUSER", "PGDATABASE", "PGPASSWORD")
+    prefixes: set[str] = set()
+    for key in os.environ:
+        for suffix in suffixes:
+            if key.endswith(suffix):
+                prefixes.add(key[: -len(suffix)])
+    for prefix in prefixes:
+        host = os.getenv(prefix + "PGHOST")
+        user = os.getenv(prefix + "PGUSER")
+        database = os.getenv(prefix + "PGDATABASE")
+        password = os.getenv(prefix + "PGPASSWORD")
+        port = os.getenv(prefix + "PGPORT", "5432")
+        if host and user and database and password:
+            from urllib.parse import quote_plus
+            return f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{quote_plus(database)}?sslmode=require"
     return None
 
 
@@ -153,7 +185,4 @@ class LearningLedger:
         else:
             with self._sqlite() as db:
                 rows = db.execute(query).fetchall()
-        return [
-            dict(recipe_id=r[0], uses=r[1], accepted=r[2], rejected=r[3], reverted=r[4], score=r[5])
-            for r in rows
-        ]
+        return [dict(recipe_id=r[0], uses=r[1], accepted=r[2], rejected=r[3], reverted=r[4], score=r[5]) for r in rows]

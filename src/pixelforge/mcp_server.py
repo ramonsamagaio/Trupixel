@@ -59,6 +59,25 @@ def _allowed_origins() -> list[str]:
     return sorted(origins)
 
 
+transport_security = TransportSecuritySettings(
+    enable_dns_rebinding_protection=True,
+    allowed_hosts=_public_hosts(),
+    allowed_origins=_allowed_origins(),
+)
+
+
+@mcp.tool()
+def server_status() -> dict:
+    """Return TruPixel deployment and community-learning status."""
+    return {
+        "ok": True,
+        "service": "trupixel",
+        "version": "0.1.1",
+        "learning_backend": store.ledger.backend,
+        "community_learning_required_online": True,
+    }
+
+
 @mcp.tool()
 def analyze_grid(image_base64: str, top_k: int = 8) -> dict:
     """Infer likely logical pixel grids from a base64-encoded PNG/JPEG/WebP."""
@@ -113,19 +132,15 @@ def community_recipe_stats() -> dict:
     return {"recipes": store.ledger.recipe_stats(), "learning_backend": store.ledger.backend}
 
 
-transport_security = TransportSecuritySettings(
-    enable_dns_rebinding_protection=True,
-    allowed_hosts=_public_hosts(),
-    allowed_origins=_allowed_origins(),
-)
-
-mcp_http_app = mcp.streamable_http_app(
-    streamable_http_path="/",
-    json_response=True,
-    stateless_http=True,
-    transport_security=transport_security,
-    host="0.0.0.0",
-)
+def create_http_app(streamable_http_path: str = "/api"):
+    """Build the production ASGI app for Vercel or another ASGI host."""
+    return mcp.streamable_http_app(
+        streamable_http_path=streamable_http_path,
+        json_response=True,
+        stateless_http=True,
+        transport_security=transport_security,
+        host="0.0.0.0",
+    )
 
 
 if __name__ == "__main__":
@@ -133,6 +148,7 @@ if __name__ == "__main__":
         "streamable-http",
         host="0.0.0.0",
         port=8000,
+        streamable_http_path="/mcp",
         stateless_http=True,
         json_response=True,
         transport_security=transport_security,
