@@ -1,6 +1,6 @@
 [project]
 name = "trupixel"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-native headless pixel-art reconstruction engine with MCP and community learning."
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -12,6 +12,7 @@ dependencies = [
   "pydantic>=2.8",
   "python-multipart>=0.0.9",
   "mcp>=2.0",
+  "psycopg[binary]>=3.2",
 ]
 
 [project.optional-dependencies]
@@ -26,3 +27,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pixelforge"]
+
+[tool.vercel]
+entrypoint = "pixelforge.web:app"
